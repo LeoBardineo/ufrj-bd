@@ -1,34 +1,127 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useState } from 'react'
 import './App.css'
+import {
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
+  Center,
+  Heading,
+  Text,
+  Button,
+  ButtonGroup,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  UnorderedList,
+  ListItem
+} from '@chakra-ui/react'
+import { BsArrowLeft, BsArrowRight } from 'react-icons/bs'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [ataques, setAtaques] = useState([])
+  const [usuario, setUsuario] = useState({})
+  const [page, setPage] = useState(0)
+  const [maxPage, setMaxPage] = useState(0)
+  const { isOpen, onOpen, onClose } = useDisclosure()
+
+  useEffect(() => {
+    fetch(`http://localhost:3000/ataques?page=${page}`)
+      .then(response => response.json())
+      .then(json => {
+        setMaxPage(400)
+        setAtaques(json.resultado)
+      })
+  }, [page])
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <Center flexDirection={'column'}>
+      <Heading as='h1' size='xl' className='heading'>Aplicação SIEM</Heading>
+      <Text fontSize='3xl' className='heading'>Tabela de ataques</Text>
+      <div className='table-wrapper'>
+        <TableContainer>
+          <Table variant='simple'>
+            <Thead>
+              <Tr>
+                <Th>Nome do usuário</Th>
+                <Th>Data e hora</Th>
+                <Th>Severidade</Th>
+                <Th>Tipo</Th>
+                <Th>Ação</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {ataques.map(ataque => (
+                <>
+                  <Tr key={ataque.idAtaque}>
+                    <Td style={{cursor: 'pointer'}} onClick={() => {
+                      fetch(`http://localhost:3000/usuarios/${ataque.idUsuario}`)
+                      .then(response => response.json())
+                      .then(json => {
+                        setUsuario(json)
+                      })
+                      onOpen()
+                    }}>{ataque.nome}</Td>
+                    <Td>{new Date(ataque.pacoteTimestamp).toLocaleString()}</Td>
+                    <Td>{ataque.severidade}</Td>
+                    <Td>{ataque.tipo}</Td>
+                    <Td>{ataque.acao}</Td>
+                  </Tr>
+                </>
+              ))}
+            </Tbody>
+          </Table>
+        </TableContainer>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+      <ButtonGroup spacing='6' className='button-wrapper'>
+        <Button onClick={() => {
+          if(page > 0){
+            setPage(page - 1)
+            console.log(page)
+          }
+        }}>
+          <BsArrowLeft/>
+        </Button>
+        <Button onClick={() => {
+          if(page <= maxPage){
+            setPage(page + 1)
+            console.log(page)
+          }
+        }}>
+          <BsArrowRight/>
+        </Button>
+      </ButtonGroup>
+
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{usuario.nome}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <UnorderedList>
+              <ListItem>Geolocalização: {usuario.geolocalizacao}</ListItem>
+              <ListItem>User Agent: {usuario.userAgent}</ListItem>
+              <ListItem>Segmento: {usuario.segmento}</ListItem>
+              <ListItem>Total de pacotes: {usuario.Total_Pacotes}</ListItem>
+            </UnorderedList>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button colorScheme='blue' mr={3} onClick={onClose}>
+              Fechar
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Center>
   )
 }
 

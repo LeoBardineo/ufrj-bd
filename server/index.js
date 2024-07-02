@@ -46,14 +46,38 @@ app.get('/usuarios', (req, res) => {
 
 // Rota para obter um usuário por ID
 app.get('/usuarios/:id', (req, res) => {
-  const id = req.params.id;
-  connection.query('SELECT * FROM usuario WHERE id = ?', [id], (err, results) => {
+  const query = "SELECT *, " +
+                "(SELECT COUNT(*) FROM pacote p WHERE p.idUsuario = u.id) AS Total_Pacotes " +
+                "FROM usuario u WHERE id = ? "
+  const id = parseInt(req.params.id);
+  connection.query(query, [id], (err, results) => {
     if (err) {
       res.status(500).send(err);
       return;
     }
     res.json(results[0]);
   });
+});
+
+app.get('/ataques', (req, res) => {
+  const query = "SELECT a.idAtaque, p.idUsuario, u.nome, p.pacoteTimestamp, a.severidade, a.tipo, a.acao FROM ataque a " +
+                "JOIN pacote p ON p.idAtaque = a.idAtaque " +
+                "JOIN usuario u ON p.idUsuario = u.id " +
+                "LIMIT ? OFFSET ? "
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+  connection.query(query, [limit, offset], (err, resultado) => {
+    if (err) {
+      res.status(500).send(err);
+      return;
+    }
+    
+    res.json({
+      paginaAtual: page,
+      resultado
+    });
+  })
 });
 
 // Iniciar o servidor
