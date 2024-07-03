@@ -60,14 +60,24 @@ app.get('/usuarios/:id', (req, res) => {
 });
 
 app.get('/ataques', (req, res) => {
-  const query = "SELECT a.idAtaque, p.idUsuario, u.nome, p.pacoteTimestamp, a.severidade, a.tipo, a.acao FROM ataque a " +
+  let query = "SELECT a.idAtaque, p.idUsuario, u.nome, p.pacoteTimestamp, a.severidade, a.tipo, a.acao FROM ataque a " +
                 "JOIN pacote p ON p.idAtaque = a.idAtaque " +
-                "JOIN usuario u ON p.idUsuario = u.id " +
-                "LIMIT ? OFFSET ? "
+                "JOIN usuario u ON p.idUsuario = u.id "
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
-  connection.query(query, [limit, offset], (err, resultado) => {
+  let arrArgs = []
+  
+  const orderBy = req.query.order || null
+  const ascDesc = req.query.ascDesc || "ASC"
+  if(orderBy != null && ascDesc != null) {
+    query += "ORDER BY " + orderBy + " " + ascDesc + " "
+  }
+
+  query += "LIMIT ? OFFSET ? "
+  arrArgs = [limit, offset]
+
+  connection.query(query, arrArgs, (err, resultado) => {
     if (err) {
       res.status(500).send(err);
       return;

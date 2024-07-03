@@ -31,16 +31,35 @@ function App() {
   const [usuario, setUsuario] = useState({})
   const [page, setPage] = useState(0)
   const [maxPage, setMaxPage] = useState(0)
+  const [asc, setAsc] = useState(null)
+  const [ord, setOrd] = useState(null)
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   useEffect(() => {
-    fetch(`http://localhost:3000/ataques?page=${page}`)
+    let URL = `http://localhost:3000/ataques?page=${page}`
+    if(asc != null && ord != null) {
+      URL += `&order=${ord}&ascDesc=${asc}`
+    }
+    fetch(URL)
       .then(response => response.json())
       .then(json => {
         setMaxPage(400)
         setAtaques(json.resultado)
       })
-  }, [page])
+  }, [page, asc])
+
+  const orderBy = (order) => {
+    console.log(order, asc)
+    setOrd(order)
+    if(asc == null) {
+      setAsc('ASC')
+    } else if (asc == 'DESC') {
+      setAsc(null)
+      setOrd(null)
+    } else {
+      setAsc('DESC')
+    }
+  }
 
   return (
     <Center flexDirection={'column'}>
@@ -51,8 +70,8 @@ function App() {
           <Table variant='simple'>
             <Thead>
               <Tr>
-                <Th>Nome do usuário</Th>
-                <Th>Data e hora</Th>
+                <Th style={{cursor: 'pointer'}} onClick={() => orderBy('nome')}>Nome do usuário</Th>
+                <Th style={{cursor: 'pointer'}} onClick={() => orderBy('pacoteTimestamp')}>Data e hora</Th>
                 <Th>Severidade</Th>
                 <Th>Tipo</Th>
                 <Th>Ação</Th>
